@@ -29,28 +29,92 @@ class CubeState {
     [Colors.white, Colors.white, Colors.white, Colors.white], // Bottom
   ];
 
-  // Rotate top face to the left, modify if necessary
-  void rotateTop() {
-    // Store the top row of each face
-    List<Color> topRowFront = [faces[0][0], faces[0][1]];
-    List<Color> topRowLeft = [faces[1][0], faces[1][1]];
-    List<Color> topRowRight = [faces[2][0], faces[2][1]];
-    List<Color> topRowBack = [faces[3][0], faces[3][1]];
-
-    // Rotate top face
-    List<Color> tempTop = [...faces[4]];
-    faces[4] = [tempTop[2], tempTop[3], tempTop[0], tempTop[1]];
-
-    // Update adjacent faces
-    faces[0] = [faces[3][2], faces[3][3], ...faces[0].sublist(2)];
-    faces[1] = [faces[0][2], faces[0][3], ...faces[1].sublist(2)];
-    faces[2] = [faces[1][2], faces[1][3], ...faces[2].sublist(2)];
-    faces[3] = [faces[2][2], faces[2][3], ...faces[3].sublist(2)];
+  // Rotate a 2x2 face clockwise
+  void _rotateFaceClockwise(int faceIndex) {
+    faces[faceIndex] = [
+      faces[faceIndex][2],
+      faces[faceIndex][0],
+      faces[faceIndex][3],
+      faces[faceIndex][1],
+    ];
   }
-  
-  // Rotate top face to the left, modify if necessary
+
+  void rotateTop() {
+    _rotateFaceClockwise(4);
+    List<Color> temp = [faces[0][0], faces[0][1]];
+    faces[0][0] = faces[1][0];
+    faces[0][1] = faces[1][1];
+    faces[1][0] = faces[3][2];
+    faces[1][1] = faces[3][3];
+    faces[3][2] = faces[2][0];
+    faces[3][3] = faces[2][1];
+    faces[2][0] = temp[0];
+    faces[2][1] = temp[1];
+  }
+
   void rotateBottom() {
-    //Need to implement your code here
+    _rotateFaceClockwise(5);
+    List<Color> temp = [faces[0][2], faces[0][3]];
+    faces[0][2] = faces[2][2];
+    faces[0][3] = faces[2][3];
+    faces[2][2] = faces[3][0];
+    faces[2][3] = faces[3][1];
+    faces[3][0] = faces[1][2];
+    faces[3][1] = faces[1][3];
+    faces[1][2] = temp[0];
+    faces[1][3] = temp[1];
+  }
+
+  void rotateLeft() {
+    _rotateFaceClockwise(1);
+    List<Color> temp = [faces[0][0], faces[0][2]];
+    faces[0][0] = faces[4][0];
+    faces[0][2] = faces[4][2];
+    faces[4][0] = faces[3][3];
+    faces[4][2] = faces[3][1];
+    faces[3][3] = faces[5][0];
+    faces[3][1] = faces[5][2];
+    faces[5][0] = temp[0];
+    faces[5][2] = temp[1];
+  }
+
+  void rotateRight() {
+    _rotateFaceClockwise(2);
+    List<Color> temp = [faces[0][1], faces[0][3]];
+    faces[0][1] = faces[5][1];
+    faces[0][3] = faces[5][3];
+    faces[5][1] = faces[3][2];
+    faces[5][3] = faces[3][0];
+    faces[3][2] = faces[4][1];
+    faces[3][0] = faces[4][3];
+    faces[4][1] = temp[0];
+    faces[4][3] = temp[1];
+  }
+
+  void rotateFront() {
+    _rotateFaceClockwise(0);
+    List<Color> temp = [faces[4][2], faces[4][3]];
+    faces[4][2] = faces[1][3];
+    faces[4][3] = faces[1][1];
+    faces[1][3] = faces[5][0];
+    faces[1][1] = faces[5][1];
+    faces[5][0] = faces[2][2];
+    faces[5][1] = faces[2][0];
+    faces[2][2] = temp[0];
+    faces[2][0] = temp[1];
+  }
+
+  void rotateBack() {
+    _rotateFaceClockwise(3);
+    List<Color> temp = [faces[4][0], faces[4][1]];
+    faces[4][0] = faces[2][3];
+    faces[4][1] = faces[2][1];
+    faces[2][3] = faces[5][2];
+    faces[2][1] = faces[5][3];
+    faces[5][2] = faces[1][0];
+    faces[5][3] = faces[1][2];
+    faces[1][0] = temp[0];
+    faces[1][2] = temp[1];
   }
 }
 
@@ -64,11 +128,12 @@ class CubeScreen extends StatefulWidget {
 class _CubeScreenState extends State<CubeScreen> {
   CubeState cube = CubeState();
 
-  void rotateTop() {
-    setState(() {
-      cube.rotateTop();
-    });
-  }
+  void rotateTop() => setState(() => cube.rotateTop());
+  void rotateBottom() => setState(() => cube.rotateBottom());
+  void rotateLeft() => setState(() => cube.rotateLeft());
+  void rotateRight() => setState(() => cube.rotateRight());
+  void rotateFront() => setState(() => cube.rotateFront());
+  void rotateBack() => setState(() => cube.rotateBack());
 
   Widget buildFace(List<Color> faceColors) {
     return GridView.builder(
@@ -86,71 +151,53 @@ class _CubeScreenState extends State<CubeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('2x2 Rubik\'s Cube'),
-        // instead of using an icon button here, create atleast 2 buttons to rotate the faces, rotate left face, or rotate right face, or implement all rotations.
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.rotate_left),
-            onPressed: rotateTop,
-          )
+      appBar: AppBar(title: const Text('2x2 Rubik\'s Cube')),
+      body: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          // Faces
+          Column(
+            children: [
+              const Text('Top'),
+              SizedBox(height: 100, width: 100, child: buildFace(cube.faces[4])),
+            ],
+          ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Column(children: [
+                const Text('Left'),
+                SizedBox(height: 100, width: 100, child: buildFace(cube.faces[1]))
+              ]),
+              Column(children: [
+                const Text('Front'),
+                SizedBox(height: 100, width: 100, child: buildFace(cube.faces[0]))
+              ]),
+              Column(children: [
+                const Text('Right'),
+                SizedBox(height: 100, width: 100, child: buildFace(cube.faces[2]))
+              ]),
+            ],
+          ),
+          Column(
+            children: [
+              const Text('Bottom'),
+              SizedBox(height: 100, width: 100, child: buildFace(cube.faces[5])),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Wrap(
+            spacing: 10,
+            children: [
+              ElevatedButton(onPressed: rotateTop, child: const Text('Top')),
+              ElevatedButton(onPressed: rotateBottom, child: const Text('Bottom')),
+              ElevatedButton(onPressed: rotateLeft, child: const Text('Left')),
+              ElevatedButton(onPressed: rotateRight, child: const Text('Right')),
+              ElevatedButton(onPressed: rotateFront, child: const Text('Front')),
+              ElevatedButton(onPressed: rotateBack, child: const Text('Back')),
+            ],
+          ),
         ],
-      ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            // Top face
-            Column(
-              children: [
-                const Text('Top'),
-                SizedBox(
-                  height: 100,
-                  width: 100,
-                  child: buildFace(cube.faces[4]),
-                ),
-              ],
-            ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                // Left face
-                Column(
-                  children: [
-                    const Text('Left'),
-                    SizedBox(
-                      height: 100,
-                      width: 100,
-                      child: buildFace(cube.faces[1]),
-                    ),
-                  ],
-                ),
-                // Front face
-                SizedBox(
-                  height: 100,
-                  width: 100,
-                  child: buildFace(cube.faces[0]),
-                ),
-                // Right face
-                Column(
-                  children: [
-                    const Text('Right'),
-                    SizedBox(
-                      height: 100,
-                      width: 100,
-                      child: buildFace(cube.faces[2]),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-            // Bottom face , implement your bottom face
-            // Rear face, implement your rear face
-                ),
-              ],
-            ),
-          ],
-        ),
       ),
     );
   }
